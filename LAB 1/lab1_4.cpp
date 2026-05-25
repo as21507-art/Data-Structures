@@ -1,8 +1,12 @@
+// C++ program: Generating dynamic array and finding min max
+// Author: Aashish Shrestha
+// Date: 25 May 2026
+// Description: The program prompts the user to enter a positive number and then generates a dynamic array of that size populated with random values. The array then find minimum and maximum values from the array and displays it to the user.
+
 #include <iostream>
 #include <cstdlib>
 
 using namespace std;
-
 
 //Function that takes an array input and finds the maximum and minimum values
 //Input: an array of integers
@@ -37,6 +41,7 @@ int main(){
     
     // Accessing each array index and storing data
     for (int i=0; i<arr_size; i++){
+        // Generating a random number from 0 to 100 and storing in the array
         my_arr[i] = rand() % 101;
         cout<<"array["<<i<<"]="<<my_arr[i]<<endl;
     }

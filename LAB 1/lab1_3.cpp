@@ -1,11 +1,11 @@
-// C Program: Checks how many prime numbers are smaller than the given number n
+// C++ Program: Checks how many prime numbers are smaller than the given number n
 // Author: Aashish Shrestha
 // May 22, 2026
 // Description: The program prompts the user to enter a positive number. The program counts how many prime numbers are less than the given input, not inlcuding the given number.
 #include <iostream>
+#include <cmath>
 
 using namespace std;
-
 int main(){
     int N;
     bool isPrime;
