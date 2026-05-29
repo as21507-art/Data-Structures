@@ -23,8 +23,8 @@ void findMinMax(int this_arr[], int this_arr_size){
     }
     
     // Displaying the extreme values of the array
-    cout<<"min: "<<min<<endl;
-    cout<<"max: "<<max<<endl;
+    cout<<"Min : "<<min<<endl;
+    cout<<"Max : "<<max<<endl;
 }
 
 
