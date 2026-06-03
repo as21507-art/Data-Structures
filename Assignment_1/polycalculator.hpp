@@ -197,9 +197,43 @@ void LinkedList::insert(int coef, int expo){
 // Input: ostream& os
 // Ouput: returns void (but displays the polynomial in its appropriate format
 void LinkedList::print(ostream &os) const{
-    string pol;
+    // Using the string stream
+    stringstream ss;
     
+    // Declaring a pointer to traverse through the list
+    Node* current = head;
     
+    // Traversing the list and formatting the terms of the polynomial
+    while (current != NULL){
+        
+        // If the coefficent is 0, it is skipped
+        if (current->coef == 0) {
+            current = current->next;
+            continue;
+        }
+        
+        // If the coefficent is neagtive then it needs to add minus symbol
+        if (current->coef < 0){
+            ss<<"-";
+            
+            // Add the rest of the terms in proper formatting, coefficent is multiplied by minus to prevent double negatives
+            ss<<-current->coef<<'x'<<'^'<<current->expo;
+        }
+        
+        // If the coefficent is positive then it needs to add the plus symbol
+        else {
+            ss<<"+";
+            
+            // Add the rest of the terms in proper formatting
+            ss<<current->coef<<'x'<<'^'<<current->expo<<' ';
+        }
+        
+        // Traversing to the next node
+        current = current->next;
+    }
+    
+    // Seding the string stream to the os
+    os << ss.str();
 }
 
 // removeAll method: Deletes all the nodes of the linked list with only head pointing to NULL remaining
