@@ -2,7 +2,7 @@
 // Name         : Polynomial Calculator 
 // Author       : Aashish Shrestha
 // Date Created : June 2, 2026
-// Date Modified:
+// Date Modified: June 5, 2026
 // Description  : Polynomial Calculator in C++ using Singly Linked-List
 //============================================================================
 
@@ -119,7 +119,7 @@ class PolyCalculator
 
 // Constructor Method for LinkedList class
 // Initializes an empty linked by setting the head pointer to null
-LinkedList::LinkedList(): head(NULL);
+LinkedList::LinkedList(): head(NULL) {}
 
 // isEmpty Method: Checks if the linked list is empty by testing if head pointer points to null
 // Input: Void
@@ -144,7 +144,7 @@ void LinkedList::insert(int coef, int expo){
         v->expo = expo;
         
         // Updating the pointers to add the new node in the list
-        head->next = v;
+        head = v;
         v->next = NULL;
         
         // Exiting the function after the node has been added
@@ -153,28 +153,31 @@ void LinkedList::insert(int coef, int expo){
     
     // If it is not empty, use pointer to traverse the list and find correct insertion point
     // Declaring the traversing pointer
-    Node* temp = head->next;
+    Node* temp = head;
     
     // Since a node does not store information about its previous node, we need a second pointer to actually insert the list
-    Node* prevTemp = head;
+    Node* prevTemp = NULL;
     
     // Traversing the list until the end (i.e. the null pointer)
     while (temp != NULL){
         
-        // If the exponent is already present then it only adds the value of the exponent without using any node
-        if (temp.expo == expo){
-            
-            temp->coef += coef
+        // If the exponent is already present then it only adds the value of the exponent without using any nodes
+        if (temp->expo == expo){
+            temp->coef += coef;
             
             // Exit the function after the term has been updated to the polynomial, no insertion required
             return;
         }
         
         // Inserting the node before the first exponent that is smaller than the new exponent
-        if (temp.expo < expo){
+        if (temp->expo < expo){
             // Insertion point has been found
             break;
         }
+        
+        // Moving to the next node
+        prevTemp = temp;
+        temp = temp->next;
     }
     // If the loop exits without break then value is added at the end of the list, the following code still handles this case
     
@@ -185,9 +188,17 @@ void LinkedList::insert(int coef, int expo){
     v->coef = coef;
     v->expo = expo;
     
-    // Updating the pointers to insert the node in its correct position
-    prevTemp->next = v;
-    v-next> = temp;
+    // If prev was NULL, then the node is added to the begining of the list
+    if (prevTemp == NULL){
+        v->next = head;
+        head = v;
+    }
+    
+    // Otherwise, updating the node pointers to insert the node in its correct position
+    else{
+        v->next = temp;
+        prevTemp->next = v;
+    }
     
     // Exiting the function after the value has been inserted
     return;
@@ -199,6 +210,9 @@ void LinkedList::insert(int coef, int expo){
 void LinkedList::print(ostream &os) const{
     // Using the string stream
     stringstream ss;
+    
+    // Zero Polynomial: Stores true if the polynomial is just zero polynomial
+    bool noTerms = true;
     
     // Declaring a pointer to traverse through the list
     Node* current = head;
@@ -212,12 +226,22 @@ void LinkedList::print(ostream &os) const{
             continue;
         }
         
+        // If there is a single non-zero term then it is no longer a zero polynomial
+        if (noTerms){
+            noTerms = false;
+        }
+        
+        // If there were existing terms then that requires separation by ' '
+        else{
+            ss << ' ';
+        }
+        
         // If the coefficent is neagtive then it needs to add minus symbol
         if (current->coef < 0){
             ss<<"-";
             
             // Add the rest of the terms in proper formatting, coefficent is multiplied by minus to prevent double negatives
-            ss<<-current->coef<<'x'<<'^'<<current->expo;
+            ss << -current->coef << 'x' << '^' << current->expo;
         }
         
         // If the coefficent is positive then it needs to add the plus symbol
@@ -225,11 +249,16 @@ void LinkedList::print(ostream &os) const{
             ss<<"+";
             
             // Add the rest of the terms in proper formatting
-            ss<<current->coef<<'x'<<'^'<<current->expo<<' ';
+            ss << current->coef << 'x' << '^' << current->expo;
         }
         
         // Traversing to the next node
         current = current->next;
+    }
+    
+    // Zero Polynomial shows a literal '0'
+    if (noTerms){
+        ss << 0;
     }
     
     // Seding the string stream to the os
@@ -239,7 +268,7 @@ void LinkedList::print(ostream &os) const{
 // removeAll method: Deletes all the nodes of the linked list with only head pointing to NULL remaining
 // Input: void
 // Output: void
-void removeAll(){
+void LinkedList::removeAll(){
     
     // Creating a temporary pointer to store deleted nodes
     Node* temp;
@@ -247,10 +276,10 @@ void removeAll(){
     while (!isEmpty()){
         
         // Stroring the first node in temp for deletion
-        temp = head->next;
+        temp = head;
         
         // Unlinking the first node from the linked list
-        head->next = temp-> next;
+        head = temp-> next;
         
         // Releasing the memory
         delete temp;
@@ -260,11 +289,9 @@ void removeAll(){
 // Destructor Method: Deletes everything about the linked list including all nodes and head pointer and releases the memory
 LinkedList::~LinkedList(){
     
-    // Removes all the ndoes from the list
+    // Removes all the ndoes from the list until head is NULL
     removeAll();
     
-    // Removes the head pointer
-    delete head;
 }
 
 
@@ -274,19 +301,21 @@ LinkedList::~LinkedList(){
 void PolyCalculator::input(){
     
     // Declaring variable to store the input polynomials
-    string pol
+    string pol;
     
     // Clearing the linked list before storing
-    list1.removeAll()
-    list2.removeAll()
+    list1.removeAll();
+    list2.removeAll();
     
     while(true){
         // Prompting the user to enter the first polynomial expression and storing it in pol
-        cout<<"Enter first Polynomial expression: ";
-        cin>>pol;
+        cout << "Enter first Polynomial expression: ";
+        
+        // Processes the entire line including the spaces
+        getline(cin, pol);
         
         // Parsing the string to check validity of polynomial
-        if parse(pol, list1) break;
+        if (parse(pol, list1)) break;
         
         // If invalid, the prompt the user to enter a valid expression
         else cout<<"Invalid expression"<<endl;
@@ -294,14 +323,16 @@ void PolyCalculator::input(){
     
     while(true){
         // Prompting the user to enter the second polynomial expression and storing it in pol
-        cout<<"Enter second Polynomial expression: ";
-        cin>>pol;
+        cout << "Enter second Polynomial expression: ";
+        
+        // Processes the entire line including the spaces
+        getline(cin, pol);
         
         // Parsing the string to check validity of polynomial
-        if parse(pol, list2) break;
+        if (parse(pol, list2)) break;
         
         // If invalid, the prompt the user to enter a valid expression
-        else cout<<"Invalid expression"<<endl;
+        else cout << "Invalid expression" << endl;
     }
     
 }
@@ -310,3 +341,229 @@ void PolyCalculator::input(){
 // parse Method: Takes a polynomial expression and converts it into a linked list if the expression is valid
 // Input: A string representing a polynomial
 // Output: True if the expression was valid and it is stored in the linked list, False if the expression was invalid
+bool PolyCalculator::parse(string str, LinkedList& list){
+    
+    // Creating a string strem
+    stringstream ss(str);
+    
+    // Declaring the components of a single term in the polynomial
+    int coef;
+    char variable;
+    char power;
+    int expo;
+    
+    // A flag to ensure that the list has at least one valid term
+    bool zero_terms = true;
+    
+    // Iterating through the string to extract terms
+    while (ss >> coef >> variable >> power >> expo){
+        
+        zero_terms = false;
+        
+        // Checking validity of the extracted term & inserting it to the list
+        if (variable == 'x' && power == '^'){
+            list.insert(coef, expo);
+        }
+        
+        // If not valid then do not add anything to the list and return false
+        else{
+            list.removeAll();
+            return false;
+        }
+    }
+    
+    // If the loop ends because of incorrect formatting and has not reach the end then it is invalid
+    if (!ss.eof() || zero_terms){
+        list.removeAll();
+        return false;
+    }
+    
+    return true;
+}
+
+
+// add Method: Adds the two polynomials stored in list1 and list2 and stores the result in list 3
+// Input: void
+// Output: void
+void PolyCalculator::add(){
+    
+    // Clears list3 to ensure there is no existing data interfering
+    list3.removeAll();
+    
+    // Declaring a pointer to traverse the lists
+    Node* current = list1.head;
+    
+    // Traversing list 1 and copying and inserting its nodes to list3
+    while (current != NULL){
+        list3.insert(current->coef, current->expo);
+        current = current->next;
+    }
+    
+    // Traversing list 2 and inserting its nodes to list3 (because insert automatically adds if they have same x^n term!)
+    current = list2.head;
+    
+    while (current != NULL){
+        list3.insert(current->coef, current->expo);
+        current = current->next;
+    }
+    
+    // Displaying the result
+    cout << "Exp1 + Exp2 = ";
+    list3.print(cout);
+    cout << endl;
+}
+
+
+// sub Method: Subtracts polynomial stored in list2 from list1 and stores the result in list3
+// Input: void
+// Output: void
+void PolyCalculator::sub(){
+    
+    // Clears list3 to ensure there is no existing data interfering
+    list3.removeAll();
+    
+    // Declaring a pointer to traverse the lists
+    Node* current = list1.head;
+    
+    // Traversing list 1 and copying and inserting its nodes to list3
+    while (current != NULL){
+        list3.insert(current->coef, current->expo);
+        current = current->next;
+    }
+    
+    // Traversing list 2 and inserting its nodes to list3 (because insert automatically adds if they have same x^n term!)
+    current = list2.head;
+    
+    while (current != NULL){
+        // Subtracting list2 is same as adding the polynomial after multiplying it with -1
+        list3.insert(-current->coef, current->expo);
+        current = current->next;
+    }
+    
+    // Displaying the result
+    cout << "Exp1 - Exp2 = ";
+    list3.print(cout);
+    cout << endl;
+}
+
+
+// mul Method: Multiplies the polynomial represented by list1 and list2, then stores the result in list3
+// Input: void
+// Output: void
+void PolyCalculator::mul(){
+    
+    // Clears list3 to ensure there is no existing data interfering
+    list3.removeAll();
+    
+    // Declaring a pointer to traverse the first list
+    Node* curr_first = list1.head;
+    Node* curr_second = list2.head;
+    
+    // If either of them are empty (equivalent to 0), then the result is 0 (list3 empty is already 0)
+    if (curr_first != NULL && curr_second != NULL){
+        
+        while (curr_first != NULL){
+            
+            // Multiplying each term of list1 with all the terms in list2
+            while (curr_second != NULL){
+                // Multiplication is product of coefficent and sum of exponents
+                list3.insert(curr_first->coef * curr_second->coef, curr_first->expo + curr_second->expo);
+                
+                curr_second = curr_second->next;
+            }
+            
+            // Traversing first list and starting the second list from the start
+            curr_first = curr_first->next;
+            curr_second = list2.head;
+        }
+    }
+    
+    // Displaying the results
+    cout << "Exp1 * Exp2 = ";
+    list3.print(cout);
+    cout << endl;
+}
+
+
+// evaluate Method: Takes an expression ID and an integer value and evaluates the polynomial
+// Input: ExpID (either 1 for first polynomial or 2 for second polynomial), x (the value for which polynomial is evaluated)
+// Output: void
+void PolyCalculator::evaluate(int ExprID, int x){
+    
+    // Variable that stores the evaluated value
+    int eval_value = 0;
+    
+    // Selecting the list based on ExprID
+    if (ExprID == 1){
+        
+        // Traversing the list to evaluate and add the value of x for each term
+        Node* curr = list1.head;
+        
+        while (curr != NULL){
+            // Typecasting result of pow from double to integer
+            eval_value += curr->coef * static_cast<int>(pow(x, curr->expo));
+            curr = curr->next;
+        }
+        
+        // Displaying the result
+        cout << "p(x) = ";
+        list1.print(cout);
+        cout << endl;
+        cout << "p(" << x << ") = " << eval_value << endl;
+        
+        return;
+    }
+    
+    if (ExprID == 2){
+        
+        // Traversing the list to evaluate and add the value of x for each term
+        Node* curr = list2.head;
+        
+        while (curr != NULL){
+            // Typecasting result of pow from double to integer
+            eval_value += curr->coef * static_cast<int>(pow(x, curr->expo));
+            curr = curr->next;
+        }
+
+        // Displaying the result
+        cout << "p(x) = ";
+        list2.print(cout);
+        cout << endl;
+        cout << "p(" << x << ") = " << eval_value << endl;
+        
+        return;
+    }
+}
+
+
+// getDegree method: returns the highest coefficent of the polynomial
+// Input: ExprID (either 1 for first polynomial or 2 for the second polynomial
+// Ouput: returns an integer that is the degree of the polynomail
+int PolyCalculator::getDegree(int exprID){
+    
+    // Since the lists are arranged in descending order of the exponent, the exponent of the first node of the list is the degree
+    
+    if (exprID == 1){
+        
+        // Checking the empty case
+        if (list1.isEmpty()){
+            return 0;
+        }
+        
+        // Otherwise, returning the exponent of the first node
+        return list1.head->expo;
+    }
+    
+    if (exprID == 2){
+        
+        // Checking the empty case
+        if (list2.isEmpty()){
+            return 0;
+        }
+        
+        // Otherwise, returning the exponent of the first node
+        return list2.head->expo;
+    }
+    
+    return 0;
+}
