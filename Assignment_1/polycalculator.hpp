@@ -28,7 +28,7 @@ class Node
 		
 	public:
 		Node(int coef, int expo) : coef(coef), expo(expo), next(nullptr)
-		{}
+{}
 		
 		friend class LinkedList;
 		friend class PolyCalculator;
@@ -382,6 +382,23 @@ bool PolyCalculator::parse(string str, LinkedList& list){
 }
 
 
+// display Method: Displays the polynomials represented by list1 and list2 in the following format
+// Exp1: +4x^3 + 2x^2 + 8x^0 <list1>
+// Exp2: +5x^2 + 1x^0 <list2>
+void PolyCalculator::display(std::ostream &os){
+    
+    // Printing expression 1 using the print method for linked lists that builds polynomial from the contents of its nodes
+    os << "Exp1: ";
+    list1.print(os);
+    os << endl;
+    
+    // Printing expression 2
+    os <<"Exp2: ";
+    list2.print(os);
+    os << endl;
+    
+}
+
 // add Method: Adds the two polynomials stored in list1 and list2 and stores the result in list 3
 // Input: void
 // Output: void
@@ -567,3 +584,44 @@ int PolyCalculator::getDegree(int exprID){
     
     return 0;
 }
+
+
+// read Method: Reads polynomial expressions from a file and stores them into list1 and list2
+// Input: FileName where the expressions are stored
+// Output: Void
+void PolyCalculator::read(string filename){
+    
+    // Clearing the list
+    list1.removeAll();
+    list2.removeAll();
+    
+    // Loading the file
+    ifstream polyFile(filename);
+    
+    if (!polyFile.is_open()){
+        throw runtime_error("File not found.");
+    }
+    
+    // A variable to read the lines of the files
+    string line;
+    
+    // Reading and parsing the first line to add it to list1
+    getline(polyFile, line);
+    if (!parse(line, list1)) {
+        throw runtime_error("File contains invalid polynomial formats");
+    }
+    
+    // Reading and parsing the first line to add it to list2
+    getline(polyFile, line);
+    if (!parse(line, list2)) {
+        throw runtime_error("File contains invalid polynomial formats");
+    }
+    
+    // Closing the file
+    polyFile.close();
+    
+    // Displaying the expressions
+    display();
+}
+
+
