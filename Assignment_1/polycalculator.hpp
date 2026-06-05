@@ -27,8 +27,7 @@ class Node
 		Node* next; 
 		
 	public:
-		Node(int coef, int expo) : coef(coef), expo(expo), next(nullptr)
-{}
+        Node(int coef = 0, int expo = 0) : coef(coef), expo(expo), next(nullptr) {};
 		
 		friend class LinkedList;
 		friend class PolyCalculator;
@@ -137,11 +136,7 @@ void LinkedList::insert(int coef, int expo){
     if (isEmpty()){
         
         // Creating a new node dynamically using a pointer
-        Node* v = new Node;
-        
-        // Adding the coefficent and exponent values to the node
-        v->coef = coef;
-        v->expo = expo;
+        Node* v = new Node(coef, expo);
         
         // Updating the pointers to add the new node in the list
         head = v;
