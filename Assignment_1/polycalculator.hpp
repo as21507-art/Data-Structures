@@ -61,6 +61,8 @@ class LinkedList
     
         /* Adding some helper functions */
         bool isEmpty();
+    
+    void removeZero());
 		
 	public:
 		friend class PolyCalculator;
@@ -125,6 +127,16 @@ LinkedList::LinkedList(): head(NULL) {}
 // Output: True if the list is empty, otherwise False
 bool LinkedList::isEmpty(){
     return head == NULL;
+}
+
+// removeZero method: Removes all the nodes having coefficent zero
+void LinkedList::removeZero(){
+    
+    // Declaring node pointers to traverse the list
+    Node* v = head;
+    Node* u = NULL;
+    
+    // f
 }
 
 // insert Method: Creates a new node adds it to the existing linked list in current order
@@ -545,6 +557,8 @@ void PolyCalculator::evaluate(int ExprID, int x){
         
         return;
     }
+    
+    cout << "Invalid Expression ID";
 }
 
 
@@ -577,7 +591,7 @@ int PolyCalculator::getDegree(int exprID){
         return list2.head->expo;
     }
     
-    return 0;
+    throw runtime_error("Invalid Expression ID");
 }
 
 

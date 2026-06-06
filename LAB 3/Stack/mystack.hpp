@@ -1,8 +1,8 @@
 /**
- * @file 
- * @author 
- * @description 
- * @date
+ * @fiile
+ * @author Aashish Shrestha
+ * @description: A program that implements stack for converting a string of mathematical expressions of single digit to postfix notation for simple evaluation algorithm
+ * @date June 5, 2026
  */
 #ifndef MY_STACK_H
 #define MY_STACK_H
@@ -41,41 +41,39 @@ bool isgeq(char opA, char opB)
 // Defining the exceptions
 
 // StackFull Exception
-// Usage: If the array functioning as stack has reached the maximum number of elements it can add.
-class StackFull : public exception {
+// Usage: When the array is filled with max number of elements but a push method attempts to add more data to the stack
+class StackFull : public std::exception {
     public:
-        StackFull(string m = "Stack is Full");
-        virtual const char* what() const throw();
+        StackFull(const char* m = "Stack is Full");
+        
+        // Redefining what method
+        virtual const char* what() const throw(){
+            return message;
+        }
+
     private:
-        string message;
-}
+        const char* message;
+};
 
 // Constructor method for StackFull
-StackFull::StackFull(string m): message(m){}
+StackFull::StackFull(const char* m): message(m){}
 
-// Redefining what method
-virtual const char* StackFull::what() const throw(){
-    return message;
-}
 
 // StackEmpty Exception
-// Usage:
-class StackEmpty : public exception {
+// Usage: When stack is empty and a pop method attempts to remove data from stack
+class StackEmpty : public std::exception {
     public:
-        StackEmpty(string m = "Stack is Empty");
-        virtual const char* what() const throw();
+        StackEmpty(const char* m = "Stack is Empty");
+        // Redefining what method
+        virtual const char* what() const throw(){
+            return message;
+        }
     private:
-        string message;
-}
+        const char* message;
+};
 
 // Constructor method for StackEmpty
-StackEmpty::StackEmpty(string m): message(m){}
-
-// Redefining what method
-virtual const char* StackEmpty::what() const throw(){
-    return message;
-}
-
+StackEmpty::StackEmpty(const char* m): message(m){}
 
 
 // Defining the MyStack Class
@@ -109,7 +107,7 @@ class MyStack {
 // Constructor Method: Allocates a dynamic array of given size to be used as a stack (Default size of array is 0)
 template <typename T>
 MyStack<T>::MyStack(int n) : max(n), top_ptr (0){
-    array = new int [n];
+    array = new T[n];
 }
 
 // Destructor Method: Deallocates the memory space for the array and deletes every attributes
@@ -146,6 +144,8 @@ void MyStack<T>::pop(){
 // top Method: Can only view to contents at the top of the stack
 template <typename T>
 const T& MyStack<T>::top() const {
+    // Checking the empty case
+    if (top_ptr <= 0) throw StackEmpty();
     return array[top_ptr - 1];
 }
 
@@ -165,9 +165,9 @@ bool MyStack<T>::isEmpty(){
 // isBalanced Function: Checks if the paranthesis in the given mathematical expression is balanced (each opening bracket has corresponding closing bracket to the right of the expression, or not)
 // Input: String representing a mathematical expression
 // Output: True if the expression is balanced and false if it is not balanced
-isBalanced(string expression){
+bool isBalanced(std::string expression){
     // Stack to store the paranthesis with capacity expression.size() because any string can have brackets at most equal to its whole length
-    char MyStack<char> para_stack(expression.size());
+    MyStack<char> para_stack(expression.size());
     
     try{
         // Traversing through the string
@@ -179,92 +179,98 @@ isBalanced(string expression){
                 // Remove the most recent opening bracket if a closing bracket is found
                 else if (expression[i] == ')') para_stack.pop();
                 
-                // Go to next char if the expression is
+                // Go to next char if the expression is not a paranthesis
                 else continue;
         }
         
         // If stack is not empty then opening bracket does not have a closing bracket
         if (!para_stack.isEmpty()) return false;
         
+        // Balanced iff stack is empty at the end of the expression
         else return true;
     }
-    catch (exception &e){
+    // If a closing bracket has no opening bracket and attempts to pop from the empty stack, it is not a balanced expression
+    catch (StackEmpty &e){
         return false;
     }
 }
 
 
-//
-string convert(string expression){
+// infix2postfix function: Takes an infix notation and implements stack to convert it into a postfix notation
+// Input: string representing an expression in infix notation
+// Ouput: string representing an expression in postfix notation
+std::string infix2postfix(std::string infix){
     
     // Stack to perform the postfix algorithm
-    MyStack<int> post_stack(expression.size());
+    MyStack<char> post_stack(infix.size());
     
     // String variable to store the postfix expression
-    string postfix_exp = "";
+    std::string postfix = "";
     
     // Traversing through the string
-    for (int i = 0; i < expression.size(); i++){
-        if (expression[i] == '('){
+    for (int i = 0; i < infix.size(); i++){
+        if (infix[i] == '('){
             post_stack.push('(');
         }
-        else if (expression[i] == ')'){
-            // Checking if the
+        else if (infix[i] == ')'){
+            // Finding the corresponding opening bracket, appending the operators to postfix along the way
             while (true){
-                postfix_exp += post_stack.top();
-                post_stack.pop();
+                
+                // Insurance to avoid infinite loop
+                if (post_stack.isEmpty()){
+                    throw StackEmpty();
+                }
+                
+                // Exit condition is finding a corresponding opening bracket
                 if (post_stack.top() == '('){
                     post_stack.pop();
                     break;
                 }
-            }
-        }
-        else if (isOperator(expression[i])){
-            while (!post_stack.isEmpty() && post_stack.top() != '('){
+                
+                // Adds all the operators between the paranthesis
+                postfix += post_stack.top();
+                post_stack.pop();
                 
             }
         }
+        
+        // Checking the operator case
+        else if (isOperator(infix[i])){
+            
+            // Adding operators of same or higher precedence or until "(" is found or it is empty
+            while (!post_stack.isEmpty() && post_stack.top()!= '(' && isgeq(post_stack.top(), infix[i])){
+                
+                // Add operator to postfix
+                postfix += post_stack.top();
+                
+                // Check the next operator (or paranthesis) of the stack
+                post_stack.pop();
+            }
+            
+            // Pushing the current operator to the stack
+            post_stack.push(infix[i]);
+        }
+        
+        // This is reached if the character was a operand and it is added to the postfix expression
         else {
-            postfix_exp += expression[i];
+            postfix += infix[i];
         }
     }
     
-    return postfix_exp;
-}
-
-float evaluate(string postfix_exp){
-    
-    // A stack to evaluate the postfix notation
-    MyStack<float> eval_stack(postfix_exp.size());
-    
-    // Variables to store the popped contents of the stack during evaluation
-    float right;
-    float left;
-    
-    // Traversing through the postfix notation
-    for (int i = 0; i < postfix_exp.size(); i++){
-        
-        if (isOperator(postfix_exp[i])){
-            right = eval_stack.top();
-            eval_stack.pop();
-            left = eval_stack.top();
-            eval_stack.pop();
-        
-            eval_stack.push(operate(postfix_exp[i], left, right));
-        }
-        
-        else{
-            eval_stack.push(postfix_exp[i]);
-        }
-        
+    // Adding the remaining operators to the postfix notation until the stack is empty
+    while (!post_stack.isEmpty()){
+        postfix += post_stack.top();
+        post_stack.pop();
     }
-    return eval_stack.top();
+    
+    return postfix;
 }
 
+
+// operate funtion: Takes a char representing an operator and two numbers and applies the operation on the two input numbers
+// Input: (char op, float left, float right) representing the operation :: left op right
+// Output: The answer to the operation in float
 float operate(char op, float left, float right){
-    if (op=='+'){
-        return left + right;
-    }
     if (op=='+'){
         return left + right;
     }
@@ -278,13 +284,55 @@ float operate(char op, float left, float right){
         return left / right;
     }
     else if (op=='^'){
-        return left ^ right;
+        return std::pow(left, right);
     }
     else{
-        throw runtime_error("Invalid math symbol")
+        throw std::runtime_error("Invalid math symbol");
     }
 }
 
+
+
+// evaluate function: Takes postfix expression and evaluates the value of the mathematical expression implementing a stack
+// Input: String representing a postfix notation
+// Output: An answer of type float to the given expression
+float evaluate(std::string postfix){
+    
+    // A stack to evaluate the postfix notation
+    MyStack<float> eval_stack(postfix.size());
+    
+    // Variables to store the popped contents of the stack during evaluation
+    float right;
+    float left;
+    
+    // Traversing through the postfix notation
+    for (int i = 0; i < postfix.size(); i++){
+        
+        // Operator case
+        if (isOperator(postfix[i])){
+            
+            // Popping two elements from the stack
+            right = eval_stack.top();
+            eval_stack.pop();
+            
+            left = eval_stack.top();
+            eval_stack.pop();
+        
+            // Pushing the result of applying the operator in the stack
+            eval_stack.push(operate(postfix[i], left, right));
+        }
+        
+        // Operand case
+        else{
+            // Pushing the operand in the stack (converting ascii value to corresponding number using - '0')
+            eval_stack.push(postfix[i] - '0');
+        }
+        
+    }
+    
+    // The only remaining value in the stack is the answer
+    return eval_stack.top();
+}
 
 //=============================================
 //Do Not write code below this line
