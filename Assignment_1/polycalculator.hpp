@@ -61,8 +61,6 @@ class LinkedList
     
         /* Adding some helper functions */
         bool isEmpty();
-    
-    void removeZero());
 		
 	public:
 		friend class PolyCalculator;
@@ -129,16 +127,6 @@ bool LinkedList::isEmpty(){
     return head == NULL;
 }
 
-// removeZero method: Removes all the nodes having coefficent zero
-void LinkedList::removeZero(){
-    
-    // Declaring node pointers to traverse the list
-    Node* v = head;
-    Node* u = NULL;
-    
-    // f
-}
-
 // insert Method: Creates a new node adds it to the existing linked list in current order
 // Input: Coefficent and Exponent of the new term of the polynomial
 // Return: Void
@@ -172,6 +160,21 @@ void LinkedList::insert(int coef, int expo){
         if (temp->expo == expo){
             temp->coef += coef;
             
+            // Removing the node if the result is zero
+            if (temp->coef == 0){
+                
+                // Deleting first node case
+                if (temp == head){
+                    head = temp->next;
+                    delete temp;
+                }
+                // Deleting middle/end nodes case
+                else{
+                    prevTemp->next = temp->next;
+                    delete temp;
+                }
+            }
+            
             // Exit the function after the term has been updated to the polynomial, no insertion required
             return;
         }
@@ -189,11 +192,7 @@ void LinkedList::insert(int coef, int expo){
     // If the loop exits without break then value is added at the end of the list, the following code still handles this case
     
     // Creating a new node dynamically using a pointer
-    Node* v = new Node;
-    
-    // Adding the coefficent and exponent values to the node
-    v->coef = coef;
-    v->expo = expo;
+    Node* v = new Node(coef, expo);
     
     // If prev was NULL, then the node is added to the begining of the list
     if (prevTemp == NULL){
