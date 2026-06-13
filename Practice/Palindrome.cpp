@@ -6,7 +6,7 @@ int main(){
     string user_word;
     int counter, len;
     bool flag = true;
-    cout<<"Enter a word";
+    cout<<"Enter a word: ";
     cin>>user_word;   
     
     len = user_word.length();
@@ -14,14 +14,14 @@ int main(){
 
     while (counter < len){
         if (user_word[counter] != user_word[len - counter - 1]){
-            cout<<endl<<"Not palindrome";
+            cerr<<endl<<"Not palindrome" << endl;
             flag = false;
             break;
         }
         counter += 1;
     }
     if (flag){
-        cout<<endl<<"Palindrome";
+        cerr<<endl<<"Palindrome" << endl;
     }
     return 0;
 }

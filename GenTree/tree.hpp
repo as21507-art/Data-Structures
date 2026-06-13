@@ -48,7 +48,7 @@ class Tree
 		bool isExternal(Node* node);
 		bool isInternal(Node* node);
 		int size(Node* node);
-    int depth(Node* node) {return 0;};
+        int depth(Node* node);
     int height(Node *node) {return 0;};
     int treeHeight() {return 0;};
     void preorder(Node *node){};
@@ -75,6 +75,7 @@ Node* Tree::getRoot()
 //========================================================================
 Node* Tree::getCurrentNode()
 {
+    
 	return curr_Node;
 }
 //========================================================================
@@ -175,6 +176,19 @@ void Tree::add(Node* parent, string child_name){
     // Adding the new node as a child of the parent
     parent->children.push_back(newChild);
 }
+
+
+// depth Method: Takes a node as a parament and returns the depth of that node
+int Tree::depth(Node* node){
+    
+    if (node->parent == nullptr) return 0;
+    else {
+        return 1 + depth(node->parent);
+    }
+}
+
+
+// 
 
 
 //Do not write any code below this line

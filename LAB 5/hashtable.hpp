@@ -136,7 +136,7 @@ void HashTable::insert(const string key, const string value){
     // Boolean to check if it was an update or it was an insert
     bool update = false;
     
-    // If this is not a update insert, then the optimal position is this one
+    // Finds the optimal position of insertion in the hash table
     int optimal_index = -1;
     
     // Traverse the hash table to search for an empty space
@@ -156,10 +156,9 @@ void HashTable::insert(const string key, const string value){
                 buckets[probe]->deleted = true;
             }
             
-            // If it was the first encountered spot then change the optimal state and then ensure it remains undeleted
+            // If it was the first encountered spot then change the optimal state
             if (optimal_index == -1){
                 optimal_index = probe;
-                buckets[probe]->deleted = false;
             }
             
             // No need to search further if key was found
@@ -186,12 +185,12 @@ void HashTable::insert(const string key, const string value){
     
     // If it was inserted, record the collisions
     else {
-        collisions += offset;
         
         if (update == true){
             cout << "Existing record has been updated." << endl;
         }
         else{
+            collisions += offset;
             size += 1;
             cout << "New record has been added successfully." << endl;
         }
@@ -205,6 +204,7 @@ void HashTable::insert(const string key, const string value){
         else {
             buckets[optimal_index]->key = key;
             buckets[optimal_index]->value = value;
+            buckets[optimal_index]->deleted = false;
         }
     }
 }
@@ -251,11 +251,11 @@ void HashTable::remove(string key){
             // Do nothing if the index is not found, this line prevents infinite loop
             if (offset >= capacity) {
                 notFound = true;
-                cout << key << " not found." << endl;
             }
         }
     }
     
+    if (notFound) cout << key << " not found." << endl;
 }
 
 
