@@ -62,6 +62,44 @@ class HashTable
 //================================================================================
 //Define the methods below this line
 
+// Helper function to convert a single string into all lower case characters, this helps in hashing variants of a word into the same bucket regardless of their cases
+string toLower(string str){
+
+    for (char &c : str){
+        c = tolower(c);
+    }
+    
+    return str;
+}
+
+
+// Helper function to compare two strings that ignores their cases (upper-case, lower-case does not matter)
+// Input: Two strings having same alphabets but may differ in upper or lower case
+// Output: Compares the string case insensitively and returns true if they are the same
+bool compare(string string_1, string string_2){
+    
+    // Determine the boolean value from unequal length directly
+    if (string_1.length() != string_2.length()) return false;
+    
+    // If they have equal length then only convert both of them to lower case and compare
+    return toLower(string_1) == toLower(string_2);
+}
+
+
+// Helper function to check if the given string has garbage values (ie. only combination of spaces and semicolons)
+// Input: A string
+// Output: True if it only contains spaces and ;, false if it has even one character that is not semi colons and spaces
+bool check_nonsense(string str){
+    
+    for(char c : str){
+        if (c == ' ' || c == ';') continue;
+        return false;
+    }
+    
+    return true;
+}
+
+
 // Methods for Translation Class
 
 // Constructor Method: Takes a string of meanings and language as parameter and extracts each distinct meaning
@@ -75,7 +113,7 @@ Translation::Translation(string meanings, string language){
         
         // Meanings are separated by semicolon
         if (c == ';'){
-            this->meanings.push_back(meanings);
+            this->meanings.push_back(current_meaning);
             current_meaning = "";
             continue;
         }
@@ -84,7 +122,7 @@ Translation::Translation(string meanings, string language){
     
     // Add the last meaning to the list if it is not an empty string
     if (current_meaning != ""){
-        this->meanings.push_back(meanings);
+        this->meanings.push_back(current_meaning);
     }
 }
 
@@ -108,7 +146,7 @@ void Translation::addMeaning(string newMeanings){
             for(int i = 0; i < this->meanings.size(); i++){
                 
                 // If duplicate is found, raise the flag and skip searching
-                if (this->meanings.at(i) == current_meaning){
+                if (compare(this->meanings.at(i), current_meaning)){
                     duplicate = true;
                     break;
                 }
@@ -125,6 +163,23 @@ void Translation::addMeaning(string newMeanings){
         
         // If semi colon is not found, continue adding the characters to form the word
         else current_meaning += c;
+    }
+    
+    // Adding the last word into the list of meanings
+    if (current_meaning != ""){
+        
+        // Searching for the meaning in the vector
+        for(int i = 0; i < this->meanings.size(); i++){
+            
+            // If duplicate is found, raise the flag and skip searching
+            if (compare(this->meanings.at(i), current_meaning)){
+                duplicate = true;
+                break;
+            }
+        }
+        
+        // Add the new meaning if and only if it was not duplicate
+        if (not duplicate) this->meanings.push_back(current_meaning);
     }
 }
 
@@ -148,7 +203,7 @@ void Entry::addTranslation(string newMeanings, string language){
     
     // Searching if the language is already present, if so then only add meanings to the existing language
     for(int i = 0; i < this->translations.size(); i++){
-        if (this->translations[i].language == language){
+        if (compare(this->translations[i].language,language)){
             this->translations[i].addMeaning(newMeanings);
             return;
         }
@@ -223,6 +278,9 @@ unsigned int HashTable::getCollisions(){
 // Input: A string representing a key of an entry
 // Output: An unsigned long integer representing the hash code of the function
 unsigned long HashTable::hashCode(string key){
+    
+    // Converting the key to all lowercase
+    key = toLower(key);
     
     // Initializing the parameters for polynomial hashing
     int a = 33;
@@ -315,6 +373,9 @@ void HashTable::import(string path){
 // Input: String represnting a word in English, String represnting a list of meanings in another language, a third string specifying the language
 void HashTable::insert(string word, string meanings,string language){
     
+    // Check if the word, string and language have empty values and nonsense combination of ;; ;;; ;; only
+    if (check_nonsense(word) || check_nonsense(meanings) || check_nonsense(language)) return;
+    
     // Find the index at which it should be stored
     unsigned long hash_code = hashCode(word);
     
@@ -343,7 +404,7 @@ void HashTable::insert(string word, string meanings,string language){
         if (buckets[probe] == nullptr) break;
         
         // Checks if the keys match, the only value needs to be updated, and find this index
-        else if (buckets[probe]->word == word){
+        else if (compare(buckets[probe]->word, word)){
             
             // If it was not deleted then it is just an update, temporarily delete this record to prevent duplicates
             if (buckets[probe]->deleted == false){
@@ -404,7 +465,7 @@ void HashTable::insert(string word, string meanings,string language){
             for (int i = 0; i < buckets[optimal_index]->translations.size(); i++){
                 
                 // If it does exist then only add the meanings at that language and mark the language as already existing
-                if (buckets[optimal_index]->translations[i].language == language){
+                if (compare(buckets[optimal_index]->translations[i].language, language)){
                     buckets[optimal_index]->translations[i].addMeaning(meanings);
                     lang_existed = true;
                     break;
@@ -444,7 +505,7 @@ void HashTable::delWord(string word){
         if (buckets[probe] == nullptr) notFound = true;
         
         // Entry is found if the keys match and the entry was not deleted
-        else if (buckets[probe]-> word == word && buckets[probe]-> deleted == false) {
+        else if (compare(buckets[probe]-> word, word) && buckets[probe]-> deleted == false) {
             
             // Delete the record lazily and decrement the size
             buckets[probe] -> deleted = true;
@@ -499,11 +560,11 @@ void HashTable::delTranslation(string word, string language){
         if (buckets[probe] == nullptr) word_notFound = true;
         
         // Entry is found if the keys match and the entry was not deleted
-        else if (buckets[probe]-> word == word && buckets[probe]-> deleted == false) {
+        else if (compare(buckets[probe]-> word, word) && buckets[probe]-> deleted == false) {
             
             // Check if the language is present and delete it
             for (int i = 0; i < buckets[probe]->translations.size(); i++){
-                if (buckets[probe]->translations[i].language == language){
+                if (compare(buckets[probe]->translations[i].language, language)){
                     buckets[probe]->translations.erase(buckets[probe]->translations.begin() + i);
                     
                     // Check if there are any translations remaining, if not then delete the entire word
@@ -561,17 +622,17 @@ void HashTable::delMeaning(string word, string meaning, string language){
         if (buckets[probe] == nullptr) word_notFound = true;
         
         // Entry is found if the keys match and the entry was not deleted
-        else if (buckets[probe]-> word == word && buckets[probe]-> deleted == false) {
+        else if (compare(buckets[probe]-> word, word) && buckets[probe]-> deleted == false) {
             
             // Check if the language is present
             for (int i = 0; i < buckets[probe]->translations.size(); i++){
-                if (buckets[probe]->translations[i].language == language){
+                if (compare(buckets[probe]->translations[i].language, language)){
                     
                     // Now search for the word in the given language
                     for (int j = 0; buckets[probe]->translations[i].meanings.size(); j++){
                         
                         // If the meaning is found, delete it from the list of meanings
-                        if (buckets[probe]->translations[i].meanings[j] == meaning){
+                        if (compare(buckets[probe]->translations[i].meanings[j], meaning)){
                             
                             // Erase method only accepts iterator so convert the index to iterator by using ___.begin() + j
                             buckets[probe]->translations[i].meanings.erase(buckets[probe]->translations[i].meanings.begin() + j);
@@ -637,7 +698,7 @@ void HashTable::exportData(string language, string filePath){
             
             // Check if the given word has any translations in that language
             for (int j = 0; j < buckets[i]->translations.size(); j++){
-                if (buckets[i]->translations[j].language == language){
+                if (compare(buckets[i]->translations[j].language, language)){
                     
                     // Extract all the translations and then create a single string
                     meanings_string = "";
@@ -691,7 +752,7 @@ void HashTable::find(string word){
         if (buckets[probe] == nullptr) notFound = true;
         
         // Entry is found if the keys match and the entry was not deleted
-        else if (buckets[probe]->word == word && buckets[probe]->deleted == false) {
+        else if (compare(buckets[probe]->word, word) && buckets[probe]->deleted == false) {
             
             // Displaying the collisions
             cout << word << " found in the Dictionary after " << offset + 1 << " comparisons." << endl;

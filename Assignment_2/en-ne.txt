@@ -1,0 +1,6 @@
+Nepali
+Hello:Namaste
+Eat:Khanu
+Go:Janu
+Play:Khelnu
+Sun:Ghaam;Surya;Dhup
