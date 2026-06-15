@@ -139,6 +139,9 @@ void HashTable::insert(const string key, const string value){
     // Finds the optimal position of insertion in the hash table
     int optimal_index = -1;
     
+    // Collisions for current index
+    int curr_collision = 0;
+    
     // Traverse the hash table to search for an empty space
     while (not failed){
         
@@ -153,13 +156,11 @@ void HashTable::insert(const string key, const string value){
             // If it was not deleted then it is just an update, temporarily delete this record to prevent duplicates
             if (buckets[probe]->deleted == false){
                 update = true;
-                buckets[probe]->deleted = true;
             }
             
-            // If it was the first encountered spot then change the optimal state
-            if (optimal_index == -1){
-                optimal_index = probe;
-            }
+            // If a key was found, then it must be inserted in this same location to prevent duplicate keys
+            optimal_index = probe;
+            curr_collision = offset;
             
             // No need to search further if key was found
             break;
@@ -167,45 +168,47 @@ void HashTable::insert(const string key, const string value){
         
         // If it is not NULL & keys don't match then check if it is a lazily deleted node, store it as optimal index if it was not found previously
         else if (buckets[probe]->deleted == true){
-            if (optimal_index == -1) optimal_index = probe;
+            if (optimal_index == -1) {
+                optimal_index = probe;
+                curr_collision = offset;
+            }
             offset += 1;
         }
         
-        // If not then increment the offset to search for next index
-        else offset += 1;
-    
+        // If not then increment the offset to search for next index and record the collision
+        else {
+            offset += 1;
+        }
+        
         // Preventing infinite loop (in case it occurs)
         if (offset >= capacity) failed = true;
     }
     
-    // Display a message if the insertion was failed
-    if (failed == true){
+    // Display a message if the insertion was failed (if there was no null space but there was a deleted entry, the it is a pseudo-failed case)
+    if (failed == true && optimal_index == -1){
         cout << "Failed to insert into the hash table." << endl;
+        return;
     }
     
-    // If it was inserted, record the collisions
+    // If insertion did not fail, then insert the key value pair in its appropriate location
+    if (update == true){
+        cout << "Existing record has been updated." << endl;
+    }
+    else{
+        size += 1;
+        cout << "New record has been added successfully." << endl;
+    }
+    
+    // If optimal index was -1, the the first available space must have been an empty space
+    if (optimal_index == -1){
+        buckets[probe] = new Entry(key, value);
+    }
+    
+    // If optimal index was an actual index, then the first available space was not empty
     else {
-        
-        if (update == true){
-            cout << "Existing record has been updated." << endl;
-        }
-        else{
-            collisions += offset;
-            size += 1;
-            cout << "New record has been added successfully." << endl;
-        }
-        
-        // If optimal index was -1, the the first available space must have been an empty space
-        if (optimal_index == -1){
-            buckets[probe] = new Entry(key, value);
-        }
-        
-        // If optimal index was an actual index, then the first available space was not empty
-        else {
-            buckets[optimal_index]->key = key;
-            buckets[optimal_index]->value = value;
-            buckets[optimal_index]->deleted = false;
-        }
+        buckets[optimal_index]->key = key;
+        buckets[optimal_index]->value = value;
+        buckets[optimal_index]->deleted = false;
     }
 }
 
