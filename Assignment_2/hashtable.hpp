@@ -1,88 +1,111 @@
-
 #ifndef _HASHTABLE_HPP
 #define _HASHTABLE_HPP
 #include <vector>
 #include <string>
+#include <iostream>
+#include <cmath>
+#include <ostream>
+#include <fstream>
+
+
 using namespace std;
 
 
 class Translation
 {
-	private:
-		string language;
-		vector<string> meanings;
-	public:
-		Translation(string meanings,string language);
-		void addMeaning(string newMeanings);
-		friend class Entry;
-		friend class HashTable;
+    private:
+        string language;
+        vector<string> meanings;
+    public:
+        Translation(string meanings,string language);
+        void addMeaning(string newMeanings);
+        friend class Entry;
+        friend class HashTable;
 };
 
 class Entry
 {
-	private:
-		string word;
-		vector<Translation> translations;
+    private:
+        string word;
+        vector<Translation> translations;
         // is the bucket is available to be reused after being deleted
-		bool deleted;
-	public:
-		Entry(string word, string meanings,string language);
-		void addTranslation(string newMeanings, string language);
-		void print();
-		friend class HashTable;
+        bool deleted;
+    public:
+        Entry(string word, string meanings,string language);
+        void addTranslation(string newMeanings, string language);
+        void print();
+        friend class HashTable;
 };
 
 class HashTable
 {
-	private:
+    private:
         // Array of Pointers to Entries for Linear and Quadratic Probing
-		Entry **buckets;
+        Entry **buckets;
         //Current Size of HashTable
-		unsigned int size;
+        unsigned int size;
         // Total Capacity of HashTable
-		unsigned int capacity;
+        unsigned int capacity;
         // Total Number of Collisions
-		unsigned int collisions;
-	public:
-		HashTable(int capacity);
-		unsigned long hashCode(string word);
-		unsigned int getSize();
-		unsigned int getCollisions();
-		void import(string path);
-		void insert(string word, string meanings,string language);
-		void delWord(string word);
-		void delTranslation(string word, string language);
-		void delMeaning(string word, string meaning, string language);
-		void exportData(string language, string filePath);
-		void find(string word);
-		~HashTable();
-		//You may add more helper methods however you are not allowed to change the 
-		//signature of the already given methods. 
+        unsigned int collisions;
+    public:
+        HashTable(int capacity);
+        unsigned long hashCode(string word);
+        unsigned int getSize();
+        unsigned int getCollisions();
+        void import(string path);
+        void insert(string word, string meanings,string language);
+        void delWord(string word);
+        void delTranslation(string word, string language);
+        void delMeaning(string word, string meaning, string language);
+        void exportData(string language, string filePath);
+        void find(string word);
+        ~HashTable();
+        //You may add more helper methods however you are not allowed to change the
+        //signature of the already given methods.
 };
 //================================================================================
 //Define the methods below this line
 
 // Helper function to convert a single string into all lower case characters, this helps in hashing variants of a word into the same bucket regardless of their cases
-string toLower(string str){
-
-    for (char &c : str){
-        c = tolower(c);
+string toLower(string str) {
+    for (char &c : str) {
+        c = ::tolower(static_cast<unsigned char>(c));
     }
-    
     return str;
+}
+
+// Helper function trim
+string trim(const string& str){
+    
+    bool start = true;
+    string newstring = "";
+    string space_betn_words = "";
+    
+    for (char c : str){
+        if (start && c == ' ') continue;
+        start = false;
+        if (c == ' ') space_betn_words += c;
+        else{
+            newstring += space_betn_words + c;
+            space_betn_words = "";
+        }
+    }
+    return newstring;
 }
 
 
 // Helper function to compare two strings that ignores their cases (upper-case, lower-case does not matter)
 // Input: Two strings having same alphabets but may differ in upper or lower case
 // Output: Compares the string case insensitively and returns true if they are the same
-bool compare(string string_1, string string_2){
+bool compare(const string string_1, const string string_2){
     
-    // Determine the boolean value from unequal length directly
-    if (string_1.length() != string_2.length()) return false;
+    // Trim and convert both strings to lowercase first
+    string trimmed_1 = trim(toLower(string_1));
+    string trimmed_2 = trim(toLower(string_2));
     
-    // If they have equal length then only convert both of them to lower case and compare
-    return toLower(string_1) == toLower(string_2);
+    // Compare the trimmed strings
+    return trimmed_1 == trimmed_2;
 }
 
 
@@ -113,17 +136,16 @@ Translation::Translation(string meanings, string language){
         
         // Meanings are separated by semicolon
         if (c == ';'){
-            this->meanings.push_back(current_meaning);
+            
+            // Only add new meanings if they are not empty strings
+            if (!current_meaning.empty()) this->meanings.push_back(current_meaning);
             current_meaning = "";
-            continue;
         }
         else current_meaning += c;
     }
     
     // Add the last meaning to the list if it is not an empty string
-    if (current_meaning != ""){
-        this->meanings.push_back(current_meaning);
-    }
+    if (!current_meaning.empty()) this->meanings.push_back(current_meaning);
 }
 
 
@@ -153,12 +175,11 @@ void Translation::addMeaning(string newMeanings){
             }
             
             // Add the new meaning if and only if it was not duplicate
-            if (not duplicate) this->meanings.push_back(current_meaning);
+            if (!duplicate) this->meanings.push_back(current_meaning);
             
             // Reset the values for next word
             current_meaning = "";
             duplicate = false;
-            continue;
         }
         
         // If semi colon is not found, continue adding the characters to form the word
@@ -167,6 +188,9 @@ void Translation::addMeaning(string newMeanings){
     
     // Adding the last word into the list of meanings
     if (current_meaning != ""){
+        
+        // Safely set the duplicate to false
+        duplicate = false;
         
         // Searching for the meaning in the vector
         for(int i = 0; i < this->meanings.size(); i++){
@@ -179,7 +203,7 @@ void Translation::addMeaning(string newMeanings){
         }
         
         // Add the new meaning if and only if it was not duplicate
-        if (not duplicate) this->meanings.push_back(current_meaning);
+        if (!duplicate) this->meanings.push_back(current_meaning);
     }
 }
 
@@ -203,7 +227,7 @@ void Entry::addTranslation(string newMeanings, string language){
     
     // Searching if the language is already present, if so then only add meanings to the existing language
     for(int i = 0; i < this->translations.size(); i++){
-        if (compare(this->translations[i].language,language)){
+        if (compare(this->translations[i].language, language)){
             this->translations[i].addMeaning(newMeanings);
             return;
         }
@@ -232,8 +256,8 @@ void Entry::print(){
             }
             else{
                 
-                // Display semi colon to separate words in the middle
-                cout << this->translations[i].meanings[j] <<"; ";
+                // Display semi colon to separate words if it is not the last word
+                cout << this->translations[i].meanings[j] << "; ";
             }
         }
         
@@ -280,20 +304,15 @@ unsigned int HashTable::getCollisions(){
 unsigned long HashTable::hashCode(string key){
     
     // Converting the key to all lowercase
-    key = toLower(key);
+    key = toLower(trim(key));
     
     // Initializing the parameters for polynomial hashing
-    int a = 33;
-    int expo = 0;
-    
+    unsigned long a = 33;
     unsigned long hash_code = 0;
     
     // Accessing each character of the key
     for (char c: key){
-        hash_code += c * (int)pow(a, expo);
-        
-        // Go to the next exponent
-        expo += 1;
+        hash_code += hash_code * a + c;
     }
     
     return hash_code;
@@ -308,7 +327,7 @@ void HashTable::import(string path){
     ifstream dictFile(path);
     
     // If the file does not exist then display the message and do nothing
-    if (not dictFile.is_open()) {
+    if (!dictFile.is_open()) {
         cout << "File not found error" << endl;
         return;
     }
@@ -366,6 +385,8 @@ void HashTable::import(string path){
     // Displaying the number of words imported from the dictionary file
     cout << count << " " << language << " words have been imported succcessfully." << endl;
     
+    // Closing the dictionary file
+    dictFile.close();
 }
 
 
@@ -376,11 +397,10 @@ void HashTable::insert(string word, string meanings,string language){
     // Check if the word, string and language have empty values and nonsense combination of ;; ;;; ;; only
     if (check_nonsense(word) || check_nonsense(meanings) || check_nonsense(language)) return;
     
-    // Find the index at which it should be stored
+    // Find the index at which it should be stored using hash function followed by the compression function
     unsigned long hash_code = hashCode(word);
-    
-    // Use the compression function (mod) to find the index
     int index = hash_code % capacity;
+
     
     // Flag to detect if the data was successfully inserted into the hash table or not
     bool failed = false;
@@ -395,8 +415,11 @@ void HashTable::insert(string word, string meanings,string language){
     // If this is not a update insert, then the optimal position is this one
     int optimal_index = -1;
     
+    // Collisions for current insertion
+    int curr_collision = -1;
+    
     // Traverse the hash table to search for an empty space
-    while (not failed){
+    while (!failed){
         
         probe = (index + offset * offset) % capacity;
         
@@ -409,14 +432,13 @@ void HashTable::insert(string word, string meanings,string language){
             // If it was not deleted then it is just an update, temporarily delete this record to prevent duplicates
             if (buckets[probe]->deleted == false){
                 update = true;
-                buckets[probe]->deleted = true;
             }
             
-            // If it was the first encountered spot then change the optimal state and then ensure it remains undeleted
-            if (optimal_index == -1){
-                optimal_index = probe;
-                buckets[probe]->deleted = false;
-            }
+            // If a key was found, then it must be inserted in this same location to prevent duplicate keys
+            optimal_index = probe;
+            
+            // This is the insert position so there were offset number of collisions to reach here
+            curr_collision = offset;
             
             // No need to search further if key was found
             break;
@@ -424,7 +446,10 @@ void HashTable::insert(string word, string meanings,string language){
         
         // If it is not NULL & keys don't match then check if it is a lazily deleted node, store it as optimal index if it was not found previously
         else if (buckets[probe]->deleted == true){
-            if (optimal_index == -1) optimal_index = probe;
+            if (optimal_index == -1) {
+                optimal_index = probe;
+                curr_collision = offset;
+            }
             offset += 1;
         }
         
@@ -435,45 +460,40 @@ void HashTable::insert(string word, string meanings,string language){
         if (offset >= capacity) failed = true;
     }
     
-    // Display a message if the insertion was failed
-    if (failed == true){
+    // Display a message if the insertion was failed (if there was no null space but there was a deleted entry, then it is a false-failed case because new entry can be inserted in the deleted location)
+    if (failed == true && optimal_index == -1){
         cout << "Failed to insert into the hash table." << endl;
+        return;
     }
     
     // If insertion did not fail then run the following code to insert
+    
+    // If it was not updated then increase the size and count the collisions
+    if (!update) size += 1;
+    
+    // Updating the collisions
+    if (curr_collision == -1) collisions += offset;
+    else collisions += curr_collision;
+    
+    // If optimal index was -1, the the first available space must have been an empty space
+    if (optimal_index == -1){
+        buckets[probe] = new Entry(word, meanings, language);
+    }
+    
+    // If optimal index was an actual index, then the first available space was not empty
     else {
         
-        // If it was not updated then increase the size and count the collisions
-        if (not update){
-            size += 1;
-            collisions += offset;
+        // If it is overwriting then we delete the previous node and create a completely new node
+        if (buckets[optimal_index]->deleted == true && !update){
+            delete buckets[optimal_index];
+            buckets[optimal_index] = new Entry(word, meanings, language);
         }
         
-        // If optimal index was -1, the the first available space must have been an empty space
-        if (optimal_index == -1){
-            buckets[probe] = new Entry(word, meanings, language);
-        }
-        
-        // If optimal index was an actual index, then the first available space was not empty
-        else {
-            buckets[optimal_index]->word = word;
+        // Performing an update otherwise
+        else{
             
-            // A boolean value to check if the language already existed
-            bool lang_existed = false;
-            
-            // Searching if the translation already exists in that langauge
-            for (int i = 0; i < buckets[optimal_index]->translations.size(); i++){
-                
-                // If it does exist then only add the meanings at that language and mark the language as already existing
-                if (compare(buckets[optimal_index]->translations[i].language, language)){
-                    buckets[optimal_index]->translations[i].addMeaning(meanings);
-                    lang_existed = true;
-                    break;
-                }
-            }
-            
-            // If the language did not exist, then add the new language and its meanings
-            if (not lang_existed) buckets[optimal_index]->translations.push_back(Translation(meanings, language));
+            // Adding the meanings and translations using the addTranslation method
+            buckets[optimal_index]->addTranslation(meanings, language);
             
             // Ensure the record is NOT DELETED at all
             buckets[optimal_index]->deleted = false;
@@ -482,27 +502,25 @@ void HashTable::insert(string word, string meanings,string language){
 }
 
 
-// delWord Method:
+// delWord Method: Takes a world and deletes it from the hashtable, including all of its translations and meanigns
+// Input: A word that needs to be deleted from the dictionary
 void HashTable::delWord(string word){
 
     // Find the index at which it should have been stored by using hashing function followed by compression function
     unsigned long hash_code = hashCode(word);
     int index = hash_code % capacity;
 
-    // Flag to detect if the record was not found in the hash table
-    bool notFound = false;
-
     // An offest to be used in quadratic probing
     int offset = 0;
     int probe;
 
     // Traversing through the hash table to find the corresponding keys
-    while (not notFound){
+    while (true){
         
         probe = (index + offset * offset) % capacity;
         
         // If the entry was NULL then that means it does not exist (if it did, it should have been there instead of NULL)
-        if (buckets[probe] == nullptr) notFound = true;
+        if (buckets[probe] == nullptr) break;
         
         // Entry is found if the keys match and the entry was not deleted
         else if (compare(buckets[probe]-> word, word) && buckets[probe]-> deleted == false) {
@@ -517,21 +535,22 @@ void HashTable::delWord(string word){
             return;
         }
         
+        // If the entry was already deleted then it is no longer present in the dictionary
+        else if (compare(buckets[probe]->word, word) && buckets[probe]->deleted == true) break;
+        
         // if record is not found then change the offset and search again
         else{
             offset += 1;
             
             // Do nothing if the index is not found, this line prevents infinite loop
             if (offset >= capacity) {
-                notFound = true;
+                break;
             }
         }
     }
 
     // Display a not found message if the record was not found in the dictionary
-    if (notFound){
-        cout << word << " not found in the Dictionary." << endl;
-    }
+    cout << word << " not found in the Dictionary." << endl;
 }
 
 
@@ -544,20 +563,17 @@ void HashTable::delTranslation(string word, string language){
     unsigned long hash_code = hashCode(word);
     int index = hash_code % capacity;
 
-    // Flag to detect if the word was not found in the hash table
-    bool word_notFound = false;
-
     // An offest to be used in quadratic probing
     int offset = 0;
     int probe;
 
     // Traversing through the hash table to find the corresponding keys
-    while (not word_notFound){
+    while (true){
         
         probe = (index + offset * offset) % capacity;
         
         // If the entry was NULL then that means it does not exist (if it did, it should have been there instead of NULL)
-        if (buckets[probe] == nullptr) word_notFound = true;
+        if (buckets[probe] == nullptr) break;
         
         // Entry is found if the keys match and the entry was not deleted
         else if (compare(buckets[probe]-> word, word) && buckets[probe]-> deleted == false) {
@@ -567,9 +583,10 @@ void HashTable::delTranslation(string word, string language){
                 if (compare(buckets[probe]->translations[i].language, language)){
                     buckets[probe]->translations.erase(buckets[probe]->translations.begin() + i);
                     
-                    // Check if there are any translations remaining, if not then delete the entire word
-                    if (buckets[probe]->translations.size() == 0) delWord(word);
-                    
+                    // Check if there are any translations remaining, if not then delete the entire word (lazily) and update the number of words (size)
+                    if (buckets[probe]->translations.size() == 0){ buckets[probe]->deleted = true;
+                        size -= 1;
+                    }
                     cout << "Translation has been successfully deleted from the Dictionary." << endl;
                     
                     // Exit the function immediately after successful deletion
@@ -581,19 +598,22 @@ void HashTable::delTranslation(string word, string language){
             return;
         }
         
+        // If the word was found and deleted then no need to do anything to the translations
+        else if (compare(buckets[probe]-> word, word) && buckets[probe]-> deleted == true) break;
+        
         // if record is not found then change the offset and search again
         else{
             offset += 1;
             
             // Do nothing if the index is not found, this line prevents infinite loop
             if (offset >= capacity) {
-                word_notFound = true;
+                break;
             }
         }
     }
 
     // Display a not found message if the word was not found in the dictionary
-    if (word_notFound) cout << word << " not found in the Dictionary." << endl;
+   cout << word << " not found in the Dictionary." << endl;
 
 }
 
@@ -606,20 +626,17 @@ void HashTable::delMeaning(string word, string meaning, string language){
     unsigned long hash_code = hashCode(word);
     int index = hash_code % capacity;
 
-    // Flag to detect if the word was not found in the hash table
-    bool word_notFound = false;
-
     // An offest to be used in quadratic probing
     int offset = 0;
     int probe;
 
     // Traversing through the hash table to find the corresponding keys
-    while (not word_notFound){
+    while (true){
         
         probe = (index + offset * offset) % capacity;
         
         // If the entry was NULL then that means it does not exist (if it did, it should have been there instead of NULL)
-        if (buckets[probe] == nullptr) word_notFound = true;
+        if (buckets[probe] == nullptr) break;
         
         // Entry is found if the keys match and the entry was not deleted
         else if (compare(buckets[probe]-> word, word) && buckets[probe]-> deleted == false) {
@@ -629,7 +646,7 @@ void HashTable::delMeaning(string word, string meaning, string language){
                 if (compare(buckets[probe]->translations[i].language, language)){
                     
                     // Now search for the word in the given language
-                    for (int j = 0; buckets[probe]->translations[i].meanings.size(); j++){
+                    for (int j = 0; j < buckets[probe]->translations[i].meanings.size(); j++){
                         
                         // If the meaning is found, delete it from the list of meanings
                         if (compare(buckets[probe]->translations[i].meanings[j], meaning)){
@@ -637,8 +654,15 @@ void HashTable::delMeaning(string word, string meaning, string language){
                             // Erase method only accepts iterator so convert the index to iterator by using ___.begin() + j
                             buckets[probe]->translations[i].meanings.erase(buckets[probe]->translations[i].meanings.begin() + j);
                             
-                            // If the translation has no meanings left then delete the translation
-                            if (buckets[probe]->translations[i].meanings.size() == 0) delTranslation(word, language);
+                            // If the translation has no meanings left then erase the translation
+                            if (buckets[probe]->translations[i].meanings.size() == 0){ buckets[probe]->translations.erase(buckets[probe]->translations.begin() + i);
+                                
+                                // Now we need to check if the word has no translations left and needs to be erased
+                                if (buckets[probe]->translations.size() == 0) {
+                                    buckets[probe]->deleted = true;
+                                    size -= 1;
+                                }
+                            }
                             
                             return;
                         }
@@ -653,32 +677,36 @@ void HashTable::delMeaning(string word, string meaning, string language){
             return;
         }
         
+        // If the word id found but is already deleted then it can never be found
+        else if (compare(buckets[probe]-> word, word) && buckets[probe]-> deleted == true) break;
+        
         // If record is not found then change the offset and search again
         else{
             offset += 1;
             
             // Do nothing if the index is not found, this line prevents infinite loop
             if (offset >= capacity) {
-                word_notFound = true;
+                break;
             }
         }
     }
 
     // Display a not found message if the word was not found in the dictionary
-    if (word_notFound) cout << word << " not found in the Dictionary." << endl;
+    cout << word << " not found in the Dictionary." << endl;
 
 }
 
 
 
-// exportData Method:
+// exportData Method: Creates a new file storing the translation of all the words in a given language
+// Input: A string representing the language of translation and another string representing the file path
 void HashTable::exportData(string language, string filePath){
     
     // Creating a new file of the given path
     ofstream LangFile(filePath);
     
     // If file could not be created then display the message and exit the function
-    if (not LangFile.is_open()){
+    if (!LangFile.is_open()){
         cout << "Unable to create a file." << endl;
         return;
     }
@@ -704,14 +732,19 @@ void HashTable::exportData(string language, string filePath){
                     meanings_string = "";
                     file_line = "";
                     
-                    // Semi colons are placed after the word until the second-to-last meaning
-                    for (int k = 0; buckets[i]->translations[j].meanings.size() - 1; k++){
-                        meanings_string += buckets[i]->translations[j].meanings[k];
-                        meanings_string += ";";
-                    }
+                    int total_meanings = buckets[i]->translations[j].meanings.size();
                     
-                    // Adding the last word to the string
-                    meanings_string += buckets[i]->translations[j].meanings[buckets[i]->translations[j].meanings.size() - 1];
+                    if (total_meanings > 0){
+                        
+                        // Semi colons are placed after the word until the second-to-last meaning
+                        for (int k = 0; k < total_meanings - 1; k++){
+                            meanings_string += buckets[i]->translations[j].meanings[k];
+                            meanings_string += ";";
+                        }
+                        
+                        // Adding the last word to the string
+                        meanings_string += buckets[i]->translations[j].meanings[total_meanings - 1];
+                    }
                     
                     // Adding the root word to form a single line in the file
                     file_line = buckets[i]->word + ":" + meanings_string;
@@ -725,6 +758,9 @@ void HashTable::exportData(string language, string filePath){
             }
         }
     }
+    
+    // Closing the file
+    LangFile.close();
 }
 
 
@@ -736,20 +772,17 @@ void HashTable::find(string word){
     unsigned long hash_code = hashCode(word);
     int index = hash_code % capacity;
     
-    // Flag to detect if the record was not found in the hash table
-    bool notFound = false;
-    
     // An offest to be used in quadratic probing
     int offset = 0;
     int probe;
     
     // Traversing through the hash table to find the corresponding keys
-    while (not notFound){
+    while (true){
         
         probe = (index + offset * offset) % capacity;
         
         // If the entry was NULL then that means it does not exist (if it did, it should have been there instead of NULL)
-        if (buckets[probe] == nullptr) notFound = true;
+        if (buckets[probe] == nullptr) break;
         
         // Entry is found if the keys match and the entry was not deleted
         else if (compare(buckets[probe]->word, word) && buckets[probe]->deleted == false) {
@@ -764,12 +797,16 @@ void HashTable::find(string word){
             return;
         }
         
+        // If entry is found but is deleted then it will never be found
+        else if (compare(buckets[probe]->word, word) && buckets[probe]->deleted == true) break;
+        
+        
         // If record is not found then change the offset and search again
         else{
             offset += 1;
             
             // Preventing infinite loop if the index is not found
-            if (offset >= capacity) notFound = true;
+            if (offset >= capacity) break;
         }
     }
     

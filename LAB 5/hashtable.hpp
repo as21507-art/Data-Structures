@@ -120,10 +120,8 @@ unsigned long HashTable::hashCode(const string key){
 // Input: Two string representing key and its value respectively
 void HashTable::insert(const string key, const string value){
     
-    // Find the index at which it should be stored
+    // Find the index at which it should be stored using hash function followed by the compression function
     unsigned long hash_code = hashCode(key);
-    
-    // Use the compression function (mod) to find the index
     int index = hash_code % capacity;
     
     // Flag to detect if the data was successfully inserted into the hash table or not
@@ -139,8 +137,8 @@ void HashTable::insert(const string key, const string value){
     // Finds the optimal position of insertion in the hash table
     int optimal_index = -1;
     
-    // Collisions for current index
-    int curr_collision = 0;
+    // Collisions for current insertion
+    int curr_collision = -1;
     
     // Traverse the hash table to search for an empty space
     while (not failed){
@@ -160,6 +158,8 @@ void HashTable::insert(const string key, const string value){
             
             // If a key was found, then it must be inserted in this same location to prevent duplicate keys
             optimal_index = probe;
+            
+            // This is the insert position so there were offset number of collisions to reach here
             curr_collision = offset;
             
             // No need to search further if key was found
@@ -170,6 +170,8 @@ void HashTable::insert(const string key, const string value){
         else if (buckets[probe]->deleted == true){
             if (optimal_index == -1) {
                 optimal_index = probe;
+                
+                // This is the expected number of collisions if it remains the insert position, but it may be overridden if a duplicate key is found
                 curr_collision = offset;
             }
             offset += 1;
@@ -184,20 +186,26 @@ void HashTable::insert(const string key, const string value){
         if (offset >= capacity) failed = true;
     }
     
-    // Display a message if the insertion was failed (if there was no null space but there was a deleted entry, the it is a pseudo-failed case)
+    // Display a message if the insertion was failed (if there was no null space but there was a deleted entry, then it is a false-failed case because new entry can be inserted in the deleted location)
     if (failed == true && optimal_index == -1){
         cout << "Failed to insert into the hash table." << endl;
         return;
     }
     
     // If insertion did not fail, then insert the key value pair in its appropriate location
+    
     if (update == true){
         cout << "Existing record has been updated." << endl;
     }
     else{
+        // If it was not an update, then increase the size
         size += 1;
         cout << "New record has been added successfully." << endl;
     }
+    
+    // Update the number of collisions, if it was inserted in a deleted space or overriding a duplicated key, use curr_collisions to count collisions, otherwise, use offset as the number of collisions
+    if (curr_collision == -1) collisions += offset;
+    else collisions += curr_collision;
     
     // If optimal index was -1, the the first available space must have been an empty space
     if (optimal_index == -1){
@@ -221,20 +229,17 @@ void HashTable::remove(string key){
     unsigned long hash_code = hashCode(key);
     int index = hash_code % capacity;
     
-    // Flag to detect if the record was not found in the hash table
-    bool notFound = false;
-    
     // An offest to be used in quadratic probing
     int offset = 0;
     int probe;
     
     // Traversing through the hash table to find the corresponding keys
-    while (not notFound){
+    while (true){
         
         probe = (index + offset * offset) % capacity;
         
         // If the entry was NULL then that means it does not exist (if it did, it should have been there instead of NULL)
-        if (buckets[probe] == NULL) notFound = true;
+        if (buckets[probe] == NULL) cout << key << " not found." << endl;
         
         // Entry is found if the keys match and the entry was not deleted
         else if (buckets[probe]-> key == key && buckets[probe]-> deleted == false) {
@@ -244,7 +249,6 @@ void HashTable::remove(string key){
             size -= 1;
             
             cout << key << " has been successfully removed!" << endl;
-            break;
         }
         
         // if record is not found then change the offset and search again
@@ -253,12 +257,15 @@ void HashTable::remove(string key){
             
             // Do nothing if the index is not found, this line prevents infinite loop
             if (offset >= capacity) {
-                notFound = true;
+                cout << key << " not found." << endl;
+                return;
             }
+            
+            continue;
         }
+        
+        return;
     }
-    
-    if (notFound) cout << key << " not found." << endl;
 }
 
 
@@ -271,26 +278,23 @@ string HashTable::get(const string key){
     unsigned long hash_code = hashCode(key);
     int index = hash_code % capacity;
     
-    // Flag to detect if the record was not found in the hash table
-    bool notFound = false;
-    
     // An offest to be used in quadratic probing
     int offset = 0;
     int probe;
     
     // Traversing through the hash table to find the corresponding keys
-    while (not notFound){
+    while (true){
         
         probe = (index + offset * offset) % capacity;
         
         // If the entry was NULL then that means it does not exist (if it did, it should have been there instead of NULL)
-        if (buckets[probe] == NULL) notFound = true;
+        if (buckets[probe] == NULL) return "Record not found!";
         
         // Entry is found if the keys match and the entry was not deleted
         else if (buckets[probe]-> key == key && buckets[probe]-> deleted == false) {
             
-            // Displaying the collisions
-            cout << "comparisions = " << offset + 1 << endl;
+            // Displaying the comparisons made to find the data (equal to offset + 1 as each offset equal an additional comparision and there is at least one initial comparison)
+            cout << "comparisons = " << offset + 1 << endl;
             return buckets[probe]->value;
         }
         
@@ -298,14 +302,10 @@ string HashTable::get(const string key){
         else{
             offset += 1;
             
-            // Preventing infinite loop if the index is not found
-            if (offset >= capacity) notFound = true;
+            // Preventing infinite loop if the index is never found
+            if (offset >= capacity) return "Record not found!";
         }
     }
-    
-    // If it was not found, return a message with the pronmpt
-    return "Record not found!";
-    
 }
 
 
